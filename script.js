@@ -113,19 +113,57 @@ document.getElementById('plotButton').addEventListener('click', function() {
 
     plotMagnitudes();
 
-    // Define the start and end points for the path
     const pointA = [28, 27];
     const pointB = [5, 30];
 
-    // Example of plotting path
-    // You need to implement navigateGreedy and aStarSearch in JavaScript
-    // const {path, angles} = navigateGreedy(pointA, pointB);
-    // plotPath(path, angles, pointA, pointB, 'Greedy Path from Point A to Point B using Fourier Series', 'pathPlot');
+    const { path: pathGreedy, angles: anglesGreedy } = navigateGreedy(pointA, pointB);
+    plotPath(pathGreedy, anglesGreedy, pointA, pointB, 'Greedy Path from Point A to Point B using Fourier Series', 'pathPlot');
+
+    const { path: pathAStar, angles: anglesAStar } = aStarSearch(pointA, pointB);
+    if (pathAStar.length === 0) {
+        console.log("No path found using A*.");
+    } else {
+        plotPath(pathAStar, anglesAStar, pointA, pointB, 'A* Path from Point A to Point B using Fourier Series', 'pathPlot');
+    }
 });
 
+// Error minimization function using Nelder-Mead algorithm (simplified version)
+function minimize(func, initialGuess) {
+    // Placeholder for the actual minimization process
+    // This is just a simplified version for demonstration purposes
+    let params = initialGuess;
+    for (let i = 0; i < 1000; i++) {
+        let grad = numericalGradient(func, params);
+        params = params.map((p, idx) => p - 0.01 * grad[idx]);
+    }
+    return { x: params };
+}
 
-// Additional necessary functions
+function numericalGradient(func, params) {
+    const h = 1e-5;
+    let grad = [];
+    for (let i = 0; i < params.length; i++) {
+        let params1 = [...params];
+        let params2 = [...params];
+        params1[i] += h;
+        params2[i] -= h;
+        grad.push((func(params1) - func(params2)) / (2 * h));
+    }
+    return grad;
+}
+
+function fourierSeries(theta, a0, a1, b1, a2, b2, a3, b3) {
+    return a0 + a1 * Math.cos(theta) + b1 * Math.sin(theta) + a2 * Math.cos(2 * theta) + b2 * Math.sin(2 * theta) + a3 * Math.cos(3 * theta) + b3 * Math.sin(3 * theta);
+}
+
+function errorFunctionFourier(params) {
+    const theta = Array.from({length: 360}, (_, i) => i * 2 * Math.PI / 360);
+    const r = theta.map(t => fourierSeries(t, ...params));
+    return r.reduce((acc, val, i) => acc + Math.pow(val - targetMagnitudes[i], 2), 0) / 360;
+}
+
 function computeMagnitude(angle, extendedAngles, extendedMagnitudes) {
+    const offset = 60;
     angle = angle % 360;
     let applicableRegions = [];
     for (let i = 0; i < extendedAngles.length; i++) {
@@ -301,124 +339,4 @@ MinHeap.prototype.heapifyDown = function (index) {
         [this.heap[index], this.heap[smallest]] = [this.heap[smallest], this.heap[index]];
         this.heapifyDown(smallest);
     }
-};
-
-// Event listener for the plot button
-document.getElementById('plotButton').addEventListener('click', function () {
-    const anglesInput = document.getElementById('angles').value.split(',').map(Number);
-    const magnitudesInput = document.getElementById('magnitudes').value.split(',').map(Number);
-
-    const offset = 60;
-    const scale = 1;
-
-    const extendedAngles = anglesInput.map(ang => [(ang - offset), (ang + offset)]);
-    const extendedMagnitudes = magnitudesInput.map(mag => mag * scale);
-    const targetMagnitudes = Array.from({ length: 360 }, (_, i) => computeMagnitude(i, extendedAngles, extendedMagnitudes));
-
-    let initialGuessFourier = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
-    let resultFourier = minimize(errorFunctionFourier, initialGuessFourier);
-    let optimizedParamsFourier = resultFourier.x;
-
-    function actionMagnitude(theta) {
-        return fourierSeries(theta, ...optimizedParamsFourier);
-    }
-
-    function plotMagnitudes() {
-        const theta = Array.from({ length: 360 }, (_, i) => i);
-        const optimizedMagnitudesFourier = theta.map(t => actionMagnitude(t * 2 * Math.PI / 360));
-
-        const data = [
-            {
-                x: theta,
-                y: targetMagnitudes,
-                mode: 'lines',
-                name: 'Target Magnitudes'
-            },
-            {
-                x: theta,
-                y: optimizedMagnitudesFourier,
-                mode: 'lines',
-                name: 'Optimized Fourier Series',
-                line: { color: 'red' }
-            }
-        ];
-
-        Plotly.newPlot('magnitudePlot', data, { title: 'Magnitudes' });
-    }
-
-    function plotPath(path, angles, pointA, pointB, title, plotId) {
-        const pathTrace = {
-            x: path.map(p => p[0]),
-            y: path.map(p => p[1]),
-            mode: 'lines+markers',
-            name: 'Path from A to B'
-        };
-        const pointATrace = {
-            x: [pointA[0]],
-            y: [pointA[1]],
-            mode: 'markers',
-            name: 'Point A',
-            marker: { color: 'red' }
-        };
-        const pointBTrace = {
-            x: [pointB[0]],
-            y: [pointB[1]],
-            mode: 'markers',
-            name: 'Point B',
-            marker: { color: 'green' }
-        };
-        const data = [pathTrace, pointATrace, pointBTrace];
-
-        Plotly.newPlot(plotId, data, { title });
-    }
-
-    plotMagnitudes();
-
-    const pointA = [28, 27];
-    const pointB = [5, 30];
-
-    const { path: pathGreedy, angles: anglesGreedy } = navigateGreedy(pointA, pointB);
-    plotPath(pathGreedy, anglesGreedy, pointA, pointB, 'Greedy Path from Point A to Point B using Fourier Series', 'pathPlot');
-
-    const { path: pathAStar, angles: anglesAStar } = aStarSearch(pointA, pointB);
-    if (pathAStar.length === 0) {
-        console.log("No path found using A*.");
-    } else {
-        plotPath(pathAStar, anglesAStar, pointA, pointB, 'A* Path from Point A to Point B using Fourier Series', 'pathPlot');
-    }
-});
-
-// Error minimization function using Nelder-Mead algorithm (simplified version)
-function minimize(func, initialGuess) {
-    // Placeholder for the actual minimization process
-    // This is just a simplified version for demonstration purposes
-    let params = initialGuess;
-    for (let i = 0; i < 1000; i++) {
-        let grad = numericalGradient(func, params);
-        params = params.map((p, idx) => p - 0.01 * grad[idx]);
-    }
-    return { x: params };
-}
-
-function numericalGradient(func, params) {
-    const h = 1e-5;
-    let grad = [];
-    for (let i = 0; i < params.length; i++) {
-        let params1 = [...params];
-        let params2 = [...params];
-        params1[i] += h;
-        params2[i] -= h;
-        grad.push((func(params1) - func(params2)) / (2 * h));
-    }
-    return grad;
-}
-
-function fourierSeries(theta, a0, a1, b1, a2, b2, a3, b3) {
-    return a0 + a1 * Math.cos(theta) + b1 * Math.sin(theta) + a2 * Math.cos(2 * theta) + b2 * Math.sin(2 * theta) + a3 * Math.cos(3 * theta) + b3 * Math.sin(3 * theta);
-}
-
-function errorFunctionFourier(params) {
-    const theta = Array.from({ length: 360 }, (_, i) => i * 2 * Math.PI / 360);
-    const r = theta.map(t => fourierSeries(t, ...params));
-    return r.reduce((acc, val, i) => acc + Math.pow(val - targetMagnitudes[i], 2), 0) / 360;
 }
