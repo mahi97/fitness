@@ -42,14 +42,14 @@ document.getElementById('plotButton').addEventListener('click', function() {
 
     const extendedAngles = anglesInput.map(ang => [(ang - offset), (ang + offset)]);
     const extendedMagnitudes = magnitudesInput.map(mag => mag * scale);
-    const targetMagnitudes = Array.from({length: 360}, (_, i) => computeMagnitude(i, extendedAngles, extendedMagnitudes));
+    const targetMagnitudes = Array.from({ length: 360 }, (_, i) => computeMagnitude(i, extendedAngles, extendedMagnitudes));
 
     function fourierSeries(theta, a0, a1, b1, a2, b2, a3, b3) {
         return a0 + a1 * Math.cos(theta) + b1 * Math.sin(theta) + a2 * Math.cos(2 * theta) + b2 * Math.sin(2 * theta) + a3 * Math.cos(3 * theta) + b3 * Math.sin(3 * theta);
     }
 
     function errorFunctionFourier(params) {
-        const theta = Array.from({length: 360}, (_, i) => i * 2 * Math.PI / 360);
+        const theta = Array.from({ length: 360 }, (_, i) => i * 2 * Math.PI / 360);
         const r = theta.map(t => fourierSeries(t, ...params));
         return r.reduce((acc, val, i) => acc + Math.pow(val - targetMagnitudes[i], 2), 0) / 360;
     }
@@ -63,7 +63,7 @@ document.getElementById('plotButton').addEventListener('click', function() {
     }
 
     function plotMagnitudes() {
-        const theta = Array.from({length: 360}, (_, i) => i);
+        const theta = Array.from({ length: 360 }, (_, i) => i);
         const optimizedMagnitudesFourier = theta.map(t => actionMagnitude(t * 2 * Math.PI / 360));
 
         const data = [
@@ -78,11 +78,11 @@ document.getElementById('plotButton').addEventListener('click', function() {
                 y: optimizedMagnitudesFourier,
                 mode: 'lines',
                 name: 'Optimized Fourier Series',
-                line: {color: 'red'}
+                line: { color: 'red' }
             }
         ];
 
-        Plotly.newPlot('magnitudePlot', data, {title: 'Magnitudes'});
+        Plotly.newPlot('magnitudePlot', data, { title: 'Magnitudes' });
     }
 
     function plotPath(path, angles, pointA, pointB, title, plotId) {
@@ -97,18 +97,18 @@ document.getElementById('plotButton').addEventListener('click', function() {
             y: [pointA[1]],
             mode: 'markers',
             name: 'Point A',
-            marker: {color: 'red'}
+            marker: { color: 'red' }
         };
         const pointBTrace = {
             x: [pointB[0]],
             y: [pointB[1]],
             mode: 'markers',
             name: 'Point B',
-            marker: {color: 'green'}
+            marker: { color: 'green' }
         };
         const data = [pathTrace, pointATrace, pointBTrace];
 
-        Plotly.newPlot(plotId, data, {title});
+        Plotly.newPlot(plotId, data, { title });
     }
 
     plotMagnitudes();
@@ -157,45 +157,9 @@ function fourierSeries(theta, a0, a1, b1, a2, b2, a3, b3) {
 }
 
 function errorFunctionFourier(params) {
-    const theta = Array.from({length: 360}, (_, i) => i * 2 * Math.PI / 360);
+    const theta = Array.from({ length: 360 }, (_, i) => i * 2 * Math.PI / 360);
     const r = theta.map(t => fourierSeries(t, ...params));
     return r.reduce((acc, val, i) => acc + Math.pow(val - targetMagnitudes[i], 2), 0) / 360;
-}
-
-function computeMagnitude(angle, extendedAngles, extendedMagnitudes) {
-    const offset = 60;
-    angle = angle % 360;
-    let applicableRegions = [];
-    for (let i = 0; i < extendedAngles.length; i++) {
-        let [startAngle, endAngle] = extendedAngles[i];
-        let magnitude = extendedMagnitudes[i];
-        startAngle = (startAngle + 360) % 360;
-        endAngle = (endAngle + 360) % 360;
-        if (startAngle > endAngle) {
-            if (angle >= startAngle || angle <= endAngle) {
-                let regionCenter = (startAngle + endAngle + 360) / 2 % 360;
-                let distanceToCenter = Math.min(Math.abs(regionCenter - angle), 360 - Math.abs(regionCenter - angle)) || 0.0001;
-                applicableRegions.push([magnitude, distanceToCenter]);
-            }
-        } else {
-            if (startAngle <= angle && angle <= endAngle) {
-                let regionCenter = (startAngle + endAngle) / 2;
-                let distanceToCenter = Math.abs(regionCenter - angle) || 0.0001;
-                applicableRegions.push([magnitude, distanceToCenter]);
-            }
-        }
-    }
-
-    if (applicableRegions.length === 1) {
-        return applicableRegions[0][0];
-    }
-    if (applicableRegions.length > 0) {
-        let totalDist = applicableRegions.reduce((acc, [_, d]) => acc + (offset + 1 - d), 0);
-        let weights = applicableRegions.map(([_, d]) => (offset + 1 - d) / totalDist);
-        let weightedMagnitude = applicableRegions.reduce((acc, [m, _], i) => acc + (m * weights[i]), 0);
-        return weightedMagnitude;
-    }
-    return 0;
 }
 
 function navigateGreedy(start, end, tol = 0.5) {
