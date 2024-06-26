@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fourier Series Pathfinding</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-2xl font-bold mb-4">Fourier Series Pathfinding</h1>
+        <form id="inputForm" class="mb-4">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                    <label for="angles" class="block text-sm font-medium text-gray-700">Angles (comma-separated)</label>
+                    <input type="text" id="angles" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="magnitudes" class="block text-sm font-medium text-gray-700">Magnitudes (comma-separated)</label>
+                    <input type="text" id="magnitudes" class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="button" id="plotButton" class="bg-blue-500 text-white p-2 rounded">Plot Graphs</button>
+            </div>
+        </form>
+        <div id="plots" class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div id="magnitudePlot" class="bg-white p-4 rounded shadow-md"></div>
+            <div id="pathPlot" class="bg-white p-4 rounded shadow-md"></div>
+        </div>
+    </div>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
